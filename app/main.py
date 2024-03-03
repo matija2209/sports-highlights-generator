@@ -13,10 +13,65 @@ from datetime import datetime
 from utils.getMatchStats import calculate_match_scores,get_top_players
 
 
+
+
+def create_teamsheet(table_name: str, data, file_path: str):
+    # Font settings (adjust the path and size as needed)
+    try:
+        # Regular font for table content
+        font_regular = ImageFont.truetype("arial.ttf", 45)
+        font_regular = ImageFont.truetype("arial.ttf", 45)
+        # Larger font for the table name
+        font_large = ImageFont.truetype("arial.ttf", 96)  # Larger font size for the table name
+    except IOError:
+        # Fallback to default font if specific font file is not found
+        font_regular = ImageFont.load_default(55)
+        font_medium = ImageFont.load_default(70)
+        font_large = ImageFont.load_default(120)
+    
+    # Enhanced layout settings
+    image_width = 1600
+    row_height = 130  # Increased row height for better readability
+    header_height = 180  # Increased header height for emphasis
+    column_padding = 70  # Padding for columns
+    image_height = header_height + row_height * (len(data) + 1)  # +1 for the header row
+    
+    # Create an image with white background
+    image = Image.new('RGB', (image_width, image_height), 'white')
+    draw = ImageDraw.Draw(image)
+    
+    # Draw table header
+    draw.text((10, 10), table_name, fill="black", font=font_large)
+    # Draw column titles
+    # draw.text((10, header_height - 25), "Mesto", fill="black", font=font_regular)
+    draw.text((60, header_height), "Ime", fill="black", font=font_medium)
+    
+    # Draw horizontal line after the header
+    draw.line((0, header_height, image_width, header_height), fill="black", width=4)
+    
+    # Draw each top player row
+    for i, player in enumerate(data, start=1):
+        y_position = header_height + row_height * i
+        # Draw horizontal line after each row
+        draw.line((0, y_position, image_width, y_position), fill="gray", width=1)
+        # Rank
+        draw.text((10, y_position + 5), str(i), fill="black", font=font_regular)
+        # Player Name
+        draw.text((60, y_position + 5), player.name, fill="black", font=font_regular)
+        # Score/Count
+
+    
+    # Save the image
+    image.save(f"app/assets/{table_name}-{file_path}.png")
+
+
+
+
 def create_table_image(table_name: str, data: List[TopPlayer], file_path: str):
     # Font settings (adjust the path and size as needed)
     try:
         # Regular font for table content
+        font_regular = ImageFont.truetype("arial.ttf", 45)
         font_regular = ImageFont.truetype("arial.ttf", 45)
         # Larger font for the table name
         font_large = ImageFont.truetype("arial.ttf", 96)  # Larger font size for the table name
@@ -144,7 +199,7 @@ def add_premier_league_style_banner(clip, text):
     # Set the duration for the final clip
     return final_clip.set_duration(clip.duration)
 
-def make_highlights_reel(source_file_name,highlights:List[FootballEvent],scores):
+def make_highlights_reel(top_scorer_name,top_opportunities,source_file_name,highlights:List[FootballEvent],scores,highlight_type):
     # Load your video
     video = VideoFileClip(f"app/source/{source_file_name}.mp4")
 
@@ -160,10 +215,10 @@ def make_highlights_reel(source_file_name,highlights:List[FootballEvent],scores)
     clips = []
 
     intro_clip = video.subclip(20, 30)
-    clip_top_scorers = add_image_to_clip(intro_clip, f"Naj strelec-{source_file_name}")
+    clip_top_scorers = add_image_to_clip(intro_clip, f"{top_scorer_name}-{source_file_name}")
 
     intro_second_clip = video.subclip(40, 50)
-    clip_top_opps = add_image_to_clip(intro_second_clip, f"Največ priložnosti-{source_file_name}")
+    clip_top_opps = add_image_to_clip(intro_second_clip, f"{top_opportunities}-{source_file_name}")
     
     clips.append(clip_top_scorers)
     clips.append(clip_top_opps)
@@ -171,6 +226,9 @@ def make_highlights_reel(source_file_name,highlights:List[FootballEvent],scores)
     Image.fromarray(frame).save("preview.jpg")
 
     for index, highlight in enumerate(highlights):
+        if highlight_type == "goals":
+            if highlight["type"] == "Priložnost":
+                continue
         text_commentary = highlight.get("commentary")
         timestamp = highlight['timestamp']
         event_type = highlight["type"]
@@ -188,8 +246,8 @@ def make_highlights_reel(source_file_name,highlights:List[FootballEvent],scores)
         clip = video.subclip(start, end)
 
         if event_type == "Match Start":
-            match,teamOneGoals,teamTwoGoals = list(filter(lambda x:x["match"]==game,scores))[0].values()
-            overlay_text = f"Tekma: {player_name} proti {team} ({teamOneGoals} - {teamTwoGoals})"
+            game,teamOneGoals,teamTwoGoals = list(filter(lambda x:x["game"]==game,scores))[0].values()
+            overlay_text = f"Tekma: {player_name} proti {team} ({teamOneGoals}:{teamTwoGoals})"
         else:
             overlay_text = f"{event_type}: {player_name} (Ekipa {team})"
 
@@ -210,26 +268,26 @@ def make_highlights_reel(source_file_name,highlights:List[FootballEvent],scores)
         final_clips.append(clip.crossfadein(3))
     final_video = concatenate_videoclips(final_clips, padding=-custom_padding, method="chain")
 
-    final_video_duration = final_video.duration
+    # final_video_duration = final_video.duration
 
-    background_audio = AudioFileClip("app/assets/stadion-sound.mp3")
-    loop_count = int(final_video_duration / background_audio.duration) + 1
+    # background_audio = AudioFileClip("app/assets/stadion-sound.mp3")
+    # loop_count = int(final_video_duration / background_audio.duration) + 1
     
-    background_audio = background_audio.fx(volumex, 0.02)
+    # background_audio = background_audio.fx(volumex, 0.02)
     
-    extended_background_audio = concatenate_audioclips([background_audio] * loop_count)
-    extended_background_audio = extended_background_audio.set_duration(final_video_duration)
+    # extended_background_audio = concatenate_audioclips([background_audio] * loop_count)
+    # extended_background_audio = extended_background_audio.set_duration(final_video_duration)
 
-    final_audio = CompositeAudioClip([final_video.audio, extended_background_audio])
+    final_audio = CompositeAudioClip([final_video.audio]) #extended_background_audio
     final_video = final_video.set_audio(final_audio)
 
     # Write the result to a file
     final_video.write_videofile(
-    f"app/highlights/{source_file_name}-{datetime.now().strftime('%H-%M')}.mp4", 
+    f"app/highlights/{source_file_name}-{highlight_type}-{datetime.now().strftime('%H-%M')}.mp4", 
         codec="libx265", 
         fps=24, 
         ffmpeg_params=['-vcodec', 'hevc_videotoolbox', '-tag:v', 'hvc1', '-quality', '54', 
-                    '-acodec', 'aac', '-b:a', '128k']
+                    '-acodec', 'aac', '-b:a', '64k']
     )
 
 def prepare_timestamp(file_path):
@@ -268,7 +326,11 @@ if __name__ == "__main__":
     timestamps = prepare_timestamp(file_path)
     scores = calculate_match_scores(timestamps)
     top_goal_scorers, top_opportunity_creators = get_top_players(timestamps)
-    create_table_image("Streleci",top_goal_scorers,file_path)
-    create_table_image("Priloznosti",top_opportunity_creators,file_path)
-    make_highlights_reel(file_path,timestamps,scores)
+    top_scorer_name = "Strelci"
+    top_opportunities = "Priloznosti"
+    create_table_image(top_scorer_name,top_goal_scorers,file_path)
+    create_table_image(top_opportunities,top_opportunity_creators,file_path)
+    highlight_types = ["goals","all"]
+    for highlight_type in highlight_types:
+        make_highlights_reel(top_scorer_name,top_opportunities,file_path,timestamps,scores,highlight_type)
     # tts("Hello how are you today","asdas")

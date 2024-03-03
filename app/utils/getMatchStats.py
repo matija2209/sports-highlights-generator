@@ -16,28 +16,37 @@ def get_top_players(timestamps: List[FootballEvent]) -> Tuple[List[TopPlayer], L
 
     return top_goal_scorers, top_opportunity_creators
 
-def calculate_match_scores(data: List[dict]) -> List[dict]:
-    # Finding match start indices and game numbers
-    match_starts = [(index, event['game']) for index, event in enumerate(data) if event['type'] == 'Match Start']
-    match_starts.append((len(data), None))  # Ensure the last match is included
+def calculate_match_scores(data: List[FootballEvent]):
+    # Initialize a list to hold the scores for each match
+    df = pd.DataFrame(data)
 
-    scores = []
+    # Filter for Goal events
+    goals_df = df[df['type'] == 'GOL']
 
-    for i in range(len(match_starts) - 1):
-        start, end = match_starts[i][0], match_starts[i + 1][0]
-        game_number = match_starts[i][1]
-        match_data = data[start:end]
-        
-        # Tally goals by team
-        team_goals = {}
-        for event in match_data:
-            if event['type'] == 'GOL':
-                team_goals[event['team']] = team_goals.get(event['team'], 0) + 1
+    # Count goals by game and team
+    goal_counts = goals_df.groupby(['game', 'team']).size().reset_index(name='goals')
+    final_structure = []
 
-        # Initialize goals to 0 for each team
-        team_one_goals = team_goals.get('A', 0)
-        team_two_goals = team_goals.get('B', 0)
+    # Iterate over each game in goal_counts
+    for game in goal_counts['game'].unique():
+        # Extract rows for the current game
+        game_goals = goal_counts[goal_counts['game'] == game]
 
-        scores.append({'match': game_number, 'teamOneGoals': team_one_goals, 'teamTwoGoals': team_two_goals})
+        # Initialize goals for both teams to 0
+        teamOneGoals = 0
+        teamTwoGoals = 0
 
-    return scores
+        # Assign goals to team one and team two based on the order they appear in the DataFrame
+        if len(game_goals) > 0:
+            teamOneGoals = game_goals.iloc[0]['goals']
+        if len(game_goals) > 1:
+            teamTwoGoals = game_goals.iloc[1]['goals']
+
+        # Append the structured data for the current game to the final_structure list
+        final_structure.append({
+            'game': game,
+            'teamOneGoals': teamOneGoals,
+            'teamTwoGoals': teamTwoGoals
+        })
+
+    return final_structure
