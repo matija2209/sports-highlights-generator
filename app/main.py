@@ -246,7 +246,10 @@ def make_highlights_reel(top_scorer_name,top_opportunities,source_file_name,high
         clip = video.subclip(start, end)
 
         if event_type == "Match Start":
-            game,teamOneGoals,teamTwoGoals = list(filter(lambda x:x["game"]==game,scores))[0].values()
+            try:
+                game,teamOneGoals,teamTwoGoals = list(filter(lambda x:x["game"]==game,scores))[0].values()
+            except:
+                game,teamOneGoals,teamTwoGoals = game,0,0
             overlay_text = f"Tekma: {player_name} proti {team} ({teamOneGoals}:{teamTwoGoals})"
         else:
             overlay_text = f"{event_type}: {player_name} (Ekipa {team})"

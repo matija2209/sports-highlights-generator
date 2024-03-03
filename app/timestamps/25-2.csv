@@ -47,7 +47,6 @@ Timestamp,Type,Scorer,Team
 1:04:37,Match Start,A,B
 1:06:25,GOL,Ermin,A
 1:05:42,Priložnost,Matija,B
-1:07:31,Match Start,C,A
 1:07:32,Priložnost,Žan G.,B
 1:08:23,Priložnost,Matija,B
 1:09:50,Priložnost,Nick,B
@@ -62,7 +61,7 @@ Timestamp,Type,Scorer,Team
 1:18:33,GOL,Hamzo,A
 1:19:45,Priložnost,Žan P.,C
 1:21:03,Priložnost,Hamzo,A
-1:22,Match Start,B,C
+1:21:55,Match Start,B,C
 1:22:41,Priložnost,Matjaž,B
 1:24:02,GOL,Matija,B
 1:25:18,Priložnost,Matija,B
