@@ -5,3 +5,5 @@ venv
 ./source/*
 .env
 preview.jpg
+teams/*
+timestamps/*

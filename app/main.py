@@ -99,11 +99,11 @@ def create_table_image(table_name: str, data: List[TopPlayer], file_path: str,ty
     draw.text((60, header_height), "Igralec", fill="black", font=font_medium)
 
     if type=="goals":
-        draw.text((image_width - 350, header_height), "Doseženi goli", fill="black", font=font_medium)
+        draw.text((image_width - 750, header_height), "Dosezeni goli", fill="black", font=font_medium)
     elif type=="assists":
-        draw.text((image_width - 350, header_height), "Število asistenc", fill="black", font=font_medium)
+        draw.text((image_width - 750, header_height), "Stevilo asistenc", fill="black", font=font_medium)
     elif type=="xpg":
-        draw.text((image_width - 350, header_height), "xPG", fill="black", font=font_medium)
+        draw.text((image_width - 750, header_height), "xPG", fill="black", font=font_medium)
     
     # Draw horizontal line after the header
     draw.line((0, header_height, image_width, header_height), fill="black", width=4)
@@ -118,7 +118,7 @@ def create_table_image(table_name: str, data: List[TopPlayer], file_path: str,ty
         # Player Name
         draw.text((60, y_position + 5), player.name.capitalize(), fill="black", font=font_regular)
         # Score/Count
-        draw.text((image_width - 350, y_position + 5), str(player.count), fill="black", font=font_regular)
+        draw.text((image_width - 750, y_position + 5), str(player.count), fill="black", font=font_regular)
     
     # Save the image
     image.save(f"app/assets/{table_name}-{file_path}.png")
@@ -153,7 +153,7 @@ def add_image_to_clip(clip, image_path):
     return final_clip
 
 
-def add_premier_league_style_banner(clip, text):
+def add_highlight_banner(clip, text):
     # Banner settings
     banner_duration = 6
     banner_image_path = "app/assets/banner.png"
@@ -211,8 +211,8 @@ def make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,sour
 
     # List of highlights
     # Duration of each clip in seconds
-    duration_before = 4  # 5 seconds before the timestamp
-    duration_after = 10  # 12 seconds after the timestamp
+    duration_before = 2  # 5 seconds before the timestamp
+    duration_after = 8  # 12 seconds after the timestamp
 
     # Duration of the transition (in seconds)
     transition_duration = 0.5
@@ -246,6 +246,7 @@ def make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,sour
         player_name = highlight["scorer"]
         team = highlight.get("team")
         game = highlight.get("game")
+        assist = highlight.get("assist")
         audio_file_name = f"highlight_{index}"
 
         if text_commentary is not None:
@@ -261,11 +262,11 @@ def make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,sour
                 game,teamOneGoals,teamTwoGoals = list(filter(lambda x:x["game"]==game,scores))[0].values()
             except:
                 game,teamOneGoals,teamTwoGoals = game,0,0
-            overlay_text = f"Tekma: {player_name} proti {team} ({teamOneGoals}:{teamTwoGoals})"
+            overlay_text = f"Tekma: {player_name.capitalize()} proti {assist.capitalize()} ({teamOneGoals}:{teamTwoGoals})"
         else:
-            overlay_text = f"{event_type}: {player_name} (Ekipa {team})"
+            overlay_text = f"{event_type.upper()}: {player_name.capitalize()} ({team.upper()})"
 
-        clip_with_banner = add_premier_league_style_banner(clip, overlay_text)
+        clip_with_banner = add_highlight_banner(clip, overlay_text)
         # Combine the video clip with the audio commentary
         if text_commentary:
             clip_with_audio = clip_with_banner.set_audio(commentary_audio)
@@ -341,9 +342,11 @@ if __name__ == "__main__":
     timestamps = prepare_timestamp(file_path)
     scores = calculate_match_scores(timestamps)
     top_goal_scorers, top_opportunity_creators,top_assists_creators = get_top_players(timestamps)
+
     top_scorer_name = "Strelci"
-    top_assists_name = "Assistence"
+    top_assists_name = "Asistence"
     top_opportunities = "Priloznosti"
+
     create_table_image(top_scorer_name,top_goal_scorers,file_path,"goals")
     create_table_image(top_opportunities,top_opportunity_creators,file_path,"xpg")
     create_table_image(top_assists_name,top_assists_creators,file_path,"assists")
