@@ -68,7 +68,7 @@ def process_timestamps_corrected(timestamps):
             event_type = event_parts[0]
             event_name = event_parts[1][:-1] if len(event_parts) > 1 else ""
 
-            results.append({"timestamp": time_in_seconds, "type": event_type, "name": event_name})
+            results.append({"timestamp": time_in_seconds, "eventType": event_type, "name": event_name})
     return results
 
 processed_timestamps = process_timestamps(timestamps)

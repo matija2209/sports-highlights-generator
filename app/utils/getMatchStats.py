@@ -7,21 +7,25 @@ def get_top_players(timestamps: List[FootballEvent]) -> Tuple[List[TopPlayer], L
     data = pd.DataFrame(timestamps)
     
     # Filter and count goals per player
-    top_goal_scorers_series = data[data['type'] == 'GOL']['scorer'].value_counts().head(5)
+    top_goal_scorers_series = data[data['eventType'] == 'goal']['scorer'].value_counts().head(5)
     top_goal_scorers = [TopPlayer(name=name, count=count) for name, count in top_goal_scorers_series.items()]
     
     # Filter and count opportunities per player
-    top_opportunity_creators_series = data[data['type'] == 'Priložnost']['scorer'].value_counts().head(5)
+    top_opportunity_creators_series = data[data['eventType'] == 'opp']['scorer'].value_counts().head(5)
     top_opportunity_creators = [TopPlayer(name=name, count=count) for name, count in top_opportunity_creators_series.items()]
 
-    return top_goal_scorers, top_opportunity_creators
+    top_assists_creators_series = data[data['eventType'] == 'goal']['assist'].value_counts().head(5)
+    top_assists_creators = top_opportunity_creators = [TopPlayer(name=name, count=count) for name, count in top_assists_creators_series.items()]
+
+
+    return top_goal_scorers, top_opportunity_creators,top_assists_creators
 
 def calculate_match_scores(data: List[FootballEvent]):
     # Initialize a list to hold the scores for each match
     df = pd.DataFrame(data)
 
     # Filter for Goal events
-    goals_df = df[df['type'] == 'GOL']
+    goals_df = df[df['eventType'] == 'goal']
 
     # Count goals by game and team
     goal_counts = goals_df.groupby(['game', 'team']).size().reset_index(name='goals')

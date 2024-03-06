@@ -1,5 +1,8 @@
 # Highlights Generator
 
+Merge all videos into one using HEVC and HEAAC.
+`for f in *.mp4; do echo "file '$f'"; done > input.txt && ffmpeg -f concat -safe 0 -i input.txt -c:v libx265 -r 30 -vcodec hevc_videotoolbox -tag:v hvc1 -quality 60 -c:a aac -b:a 40k -ac 1 -y merged_video_3.mp4 && rm input.txt`
+
 ## Virtual Env
 
 ## Docker stuff

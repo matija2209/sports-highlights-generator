@@ -67,7 +67,7 @@ def create_teamsheet(table_name: str, data, file_path: str):
 
 
 
-def create_table_image(table_name: str, data: List[TopPlayer], file_path: str):
+def create_table_image(table_name: str, data: List[TopPlayer], file_path: str,type="goals"):
     # Font settings (adjust the path and size as needed)
     try:
         # Regular font for table content
@@ -96,8 +96,14 @@ def create_table_image(table_name: str, data: List[TopPlayer], file_path: str):
     draw.text((10, 10), table_name, fill="black", font=font_large)
     # Draw column titles
     # draw.text((10, header_height - 25), "Mesto", fill="black", font=font_regular)
-    draw.text((60, header_height), "Ime", fill="black", font=font_medium)
-    draw.text((image_width - 200, header_height), "Goli", fill="black", font=font_medium)
+    draw.text((60, header_height), "Igralec", fill="black", font=font_medium)
+
+    if type=="goals":
+        draw.text((image_width - 350, header_height), "Doseženi goli", fill="black", font=font_medium)
+    elif type=="assists":
+        draw.text((image_width - 350, header_height), "Število asistenc", fill="black", font=font_medium)
+    elif type=="xpg":
+        draw.text((image_width - 350, header_height), "xPG", fill="black", font=font_medium)
     
     # Draw horizontal line after the header
     draw.line((0, header_height, image_width, header_height), fill="black", width=4)
@@ -110,9 +116,9 @@ def create_table_image(table_name: str, data: List[TopPlayer], file_path: str):
         # Rank
         draw.text((10, y_position + 5), str(i), fill="black", font=font_regular)
         # Player Name
-        draw.text((60, y_position + 5), player.name, fill="black", font=font_regular)
+        draw.text((60, y_position + 5), player.name.capitalize(), fill="black", font=font_regular)
         # Score/Count
-        draw.text((image_width - 200, y_position + 5), str(player.count), fill="black", font=font_regular)
+        draw.text((image_width - 350, y_position + 5), str(player.count), fill="black", font=font_regular)
     
     # Save the image
     image.save(f"app/assets/{table_name}-{file_path}.png")
@@ -199,7 +205,7 @@ def add_premier_league_style_banner(clip, text):
     # Set the duration for the final clip
     return final_clip.set_duration(clip.duration)
 
-def make_highlights_reel(top_scorer_name,top_opportunities,source_file_name,highlights:List[FootballEvent],scores,highlight_type):
+def make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,source_file_name,highlights:List[FootballEvent],scores,highlight_type):
     # Load your video
     video = VideoFileClip(f"app/source/{source_file_name}.mp4")
 
@@ -217,21 +223,26 @@ def make_highlights_reel(top_scorer_name,top_opportunities,source_file_name,high
     intro_clip = video.subclip(20, 30)
     clip_top_scorers = add_image_to_clip(intro_clip, f"{top_scorer_name}-{source_file_name}")
 
-    intro_second_clip = video.subclip(40, 50)
+    intro_assists_clip = video.subclip(30, 40)
+    clip_top_assists = add_image_to_clip(intro_assists_clip, f"{top_assists_name}-{source_file_name}")
+
+
+    intro_second_clip = video.subclip(40, 45)
     clip_top_opps = add_image_to_clip(intro_second_clip, f"{top_opportunities}-{source_file_name}")
     
     clips.append(clip_top_scorers)
+    clips.append(clip_top_assists)
     clips.append(clip_top_opps)
     frame = clip_top_scorers.get_frame(1)
     Image.fromarray(frame).save("preview.jpg")
 
     for index, highlight in enumerate(highlights):
         if highlight_type == "goals":
-            if highlight["type"] == "Priložnost":
+            if highlight["eventType"] == "opp":
                 continue
         text_commentary = highlight.get("commentary")
         timestamp = highlight['timestamp']
-        event_type = highlight["type"]
+        event_type = highlight["eventType"]
         player_name = highlight["scorer"]
         team = highlight.get("team")
         game = highlight.get("game")
@@ -245,7 +256,7 @@ def make_highlights_reel(top_scorer_name,top_opportunities,source_file_name,high
         end = min(timestamp + duration_after, video.duration)
         clip = video.subclip(start, end)
 
-        if event_type == "Match Start":
+        if event_type == "start":
             try:
                 game,teamOneGoals,teamTwoGoals = list(filter(lambda x:x["game"]==game,scores))[0].values()
             except:
@@ -302,23 +313,24 @@ def prepare_timestamp(file_path):
     objects_list = []
     
     # Add a new column to identify the game each event belongs to
-    data['Game'] = 0  # Initialize the 'Game' column
+    data['game'] = 0  # Initialize the 'Game' column
     current_game = 0  # Counter for the current game
 
     # Iterate through each row to update the 'Game' column
     for index, row in data.iterrows():
-        if row['Type'] == 'Match Start':
-            current_game += 1  # Increment game counter when a new match starts
-        data.at[index, 'Game'] = current_game
+        if row['eventType'] == 'start':
+            current_game += 1  # Increment game counter when a new starts
+        data.at[index, 'game'] = current_game
 
     # Iterate through each row in the dataframe to construct the object
     for index, row in data.iterrows():
         obj = {
-            'timestamp': convert_to_seconds(row['Timestamp']),
-            'type': row['Type'],
-            'scorer': row['Scorer'],
-            'team': row['Team'],
-            'game': row['Game']  # Include the game identification
+            'timestamp': convert_to_seconds(row['timestamp']),
+            'eventType': row['eventType'],
+            'scorer': row['scorer'],
+            'team': row['team'],
+            'assist': row['assist'],
+            'game': row['game']  # Include the game identification
         }
         objects_list.append(obj)
     
@@ -328,12 +340,15 @@ if __name__ == "__main__":
     file_path = input("What is the name of the file?\n")
     timestamps = prepare_timestamp(file_path)
     scores = calculate_match_scores(timestamps)
-    top_goal_scorers, top_opportunity_creators = get_top_players(timestamps)
+    top_goal_scorers, top_opportunity_creators,top_assists_creators = get_top_players(timestamps)
     top_scorer_name = "Strelci"
+    top_assists_name = "Assistence"
     top_opportunities = "Priloznosti"
-    create_table_image(top_scorer_name,top_goal_scorers,file_path)
-    create_table_image(top_opportunities,top_opportunity_creators,file_path)
+    create_table_image(top_scorer_name,top_goal_scorers,file_path,"goals")
+    create_table_image(top_opportunities,top_opportunity_creators,file_path,"xpg")
+    create_table_image(top_assists_name,top_assists_creators,file_path,"assists")
+
     highlight_types = ["goals","all"]
     for highlight_type in highlight_types:
-        make_highlights_reel(top_scorer_name,top_opportunities,file_path,timestamps,scores,highlight_type)
+        make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,file_path,timestamps,scores,highlight_type)
     # tts("Hello how are you today","asdas")
