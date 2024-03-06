@@ -11,6 +11,7 @@ from models.Timestamp import FootballEvent,TopPlayer
 from typing import List
 from datetime import datetime
 from utils.getMatchStats import calculate_match_scores,get_top_players
+import math
 
 
 
@@ -211,8 +212,8 @@ def make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,sour
 
     # List of highlights
     # Duration of each clip in seconds
-    duration_before = 2  # 5 seconds before the timestamp
-    duration_after = 8  # 12 seconds after the timestamp
+    duration_before = 1  # 5 seconds before the timestamp
+    duration_after = 11  # 12 seconds after the timestamp
 
     # Duration of the transition (in seconds)
     transition_duration = 0.5
@@ -264,7 +265,10 @@ def make_highlights_reel(top_scorer_name,top_assists_name,top_opportunities,sour
                 game,teamOneGoals,teamTwoGoals = game,0,0
             overlay_text = f"Tekma: {player_name.capitalize()} proti {assist.capitalize()} ({teamOneGoals}:{teamTwoGoals})"
         else:
-            overlay_text = f"{event_type.upper()}: {player_name.capitalize()} ({team.upper()})"
+            if isinstance(assist, str):
+                overlay_text = f"{event_type.upper()}: {player_name.capitalize()} podajalec: {assist.capitalize()} ({team.upper()})"
+            else:
+                overlay_text = f"{event_type.upper()}: {player_name.capitalize()} ({team.upper()})"
 
         clip_with_banner = add_highlight_banner(clip, overlay_text)
         # Combine the video clip with the audio commentary
@@ -348,8 +352,8 @@ if __name__ == "__main__":
     top_opportunities = "Priloznosti"
 
     create_table_image(top_scorer_name,top_goal_scorers,file_path,"goals")
-    create_table_image(top_opportunities,top_opportunity_creators,file_path,"xpg")
     create_table_image(top_assists_name,top_assists_creators,file_path,"assists")
+    create_table_image(top_opportunities,top_opportunity_creators,file_path,"xpg")
 
     highlight_types = ["goals","all"]
     for highlight_type in highlight_types:

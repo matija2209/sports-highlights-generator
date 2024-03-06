@@ -15,7 +15,7 @@ def get_top_players(timestamps: List[FootballEvent]) -> Tuple[List[TopPlayer], L
     top_opportunity_creators = [TopPlayer(name=name, count=count) for name, count in top_opportunity_creators_series.items()]
 
     top_assists_creators_series = data[data['eventType'] == 'goal']['assist'].value_counts().head(5)
-    top_assists_creators = top_opportunity_creators = [TopPlayer(name=name, count=count) for name, count in top_assists_creators_series.items()]
+    top_assists_creators = [TopPlayer(name=name, count=count) for name, count in top_assists_creators_series.items()]
 
 
     return top_goal_scorers, top_opportunity_creators,top_assists_creators
